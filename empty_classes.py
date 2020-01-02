@@ -4,14 +4,18 @@ from datetime import datetime, time
 from time import strftime, gmtime
 from typing import List, Any
 import csv
-
 import pytz
-
-IST = pytz.timezone('Etc/GMT-2')
 from config import *
 
+IST = pytz.timezone('Etc/GMT-2')
 
-def get_now():
+
+def get_now() -> tuple:
+    """
+    get current time
+
+    :return: tuple like (day in heb letter, HH:MM)
+    """
     day = datetime.now(tz=IST).today().weekday()
     day = "בגדהוזא"[day]
     hour_min = datetime.now(tz=IST).strftime("%H:%M")
@@ -23,7 +27,7 @@ def index_of(item):
 
 
 def room_of(i):
-    return i[index_of("build")], i[index_of("room number")]
+    return i[index_of("building")], i[index_of("room number")]
 
 
 def get_data_from_file(file_path: str) -> str:
@@ -35,14 +39,11 @@ def get_data_from_file(file_path: str) -> str:
     """
     with open(filepath, newline='\n', encoding='UTF-8') as csvfile:
         data = list(csv.reader(csvfile))
-    data = list(filter(lambda i: i[index_of("build")] != "" and i[index_of("start time")] != "", data))
+    data = list(filter(lambda i: i[index_of("building")] != "" and i[index_of("start time")] != "", data))
     return data
 
 
-
-
 def is_time_between(begin_time, end_time, check_time=None):
-    # If check time is not given, default to current UTC time
     check_time = check_time or datetime.utcnow().time()
     if begin_time < end_time:
         return check_time >= begin_time and check_time <= end_time
@@ -83,12 +84,9 @@ def day_and_hour(i):
 def sort_list_by_time(data, day=None, hour_min=None):
     if day == None or hour_min == None:
         (day, hour_min) = get_now()
-    #list1 = sorted(filter(
+    # list1 = sorted(filter(
     #    lambda i: day > i[index_of("day")] or day == i[index_of("day")] and hour_min >= i[index_of("start time")],
     #    data), key=day_and_hour)
-    #list2 = sorted(filter(lambda i: i not in list2, data), key=day_and_hour)
-    #return list1 + list2
+    # list2 = sorted(filter(lambda i: i not in list2, data), key=day_and_hour)
+    # return list1 + list2
     return sorted(data, key=day_and_hour)
-
-
-
