@@ -2,6 +2,9 @@
 
 from datetime import datetime, time
 from time import strftime, gmtime
+from typing import List, Any
+import csv
+
 import pytz
 
 IST = pytz.timezone('Etc/GMT-2')
@@ -18,21 +21,24 @@ def get_now():
 def index_of(item):
     return context.index(item)
 
-import csv
 
 def room_of(i):
     return i[index_of("build")], i[index_of("room number")]
 
 
-def get_data_from_file(file_path):
+def get_data_from_file(file_path: str) -> str:
+    """
+    get file name of cvs file, and return the file as list of lists
+
+    :param file_path: path of file
+    :return: data as list of lists
+    """
     with open(filepath, newline='\n', encoding='UTF-8') as csvfile:
         data = list(csv.reader(csvfile))
     data = list(filter(lambda i: i[index_of("build")] != "" and i[index_of("start time")] != "", data))
     return data
 
 
-def get_all_classes(data):
-    return list(set(map(lambda i: (i[index_of("build")], i[index_of("room number")]), data)))
 
 
 def is_time_between(begin_time, end_time, check_time=None):
@@ -42,6 +48,7 @@ def is_time_between(begin_time, end_time, check_time=None):
         return check_time >= begin_time and check_time <= end_time
     else:  # crosses midnight
         return check_time >= begin_time or check_time <= end_time
+
 
 def get_class_for_now(data, all_classes):
     now = get_now()
@@ -69,11 +76,19 @@ def get_classes_by_time(data, all_classes, day, time):
     return result
 
 
-def get_info_by_room(data, build, room_number):
-    return list(filter(lambda i: i[index_of("build")] == build and i[index_of("room number")] == room_number, data))
+def day_and_hour(i):
+    return i[index_of("day")], i[index_of("start time")]
 
 
-def main():
-    data = get_data_from_file(filepath)
-    classes = get_all_classes(data)
-    print(get_class_for_now(data, classes))
+def sort_list_by_time(data, day=None, hour_min=None):
+    if day == None or hour_min == None:
+        (day, hour_min) = get_now()
+    #list1 = sorted(filter(
+    #    lambda i: day > i[index_of("day")] or day == i[index_of("day")] and hour_min >= i[index_of("start time")],
+    #    data), key=day_and_hour)
+    #list2 = sorted(filter(lambda i: i not in list2, data), key=day_and_hour)
+    #return list1 + list2
+    return sorted(data, key=day_and_hour)
+
+
+
