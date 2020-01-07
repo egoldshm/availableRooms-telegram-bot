@@ -7,9 +7,9 @@ filepathTal = "coursesTal.csv"
 REPORT_FILE = "דיווח.csv"
 context = ["id", "course name", "course code", "teacher", "day",
            "start time", "end time", "building", "room number", "type", "students number", "notes"]
-API_CODE_OF_BOT = '1028809311:AAGr-JzIAGItdtpeX6WUAPquGdzlMmIyENE'
+API_CODE_OF_BOT = '-------------'
 
-ADMIN_ID = 114534171
+ADMIN_ID = 1
 
 # Constants - for messages:
 WELCOME_MESSAGE = """ברוך הבא! בחר אופציה מהתפריט ⬇😎"""
