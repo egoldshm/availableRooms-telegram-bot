@@ -1,92 +1,159 @@
 # -*- coding: utf-8 -*-
 
-from datetime import datetime, time
-from time import strftime, gmtime
 from typing import List, Any
 import csv
-import pytz
 from config import *
-
-IST = pytz.timezone('Etc/GMT-2')
-
-
-def get_now() -> tuple:
-    """
-    get current time
-
-    :return: tuple like (day in heb letter, HH:MM)
-    """
-    day = datetime.now(tz=IST).today().weekday()
-    day = "בגדהוזא"[day]
-    hour_min = datetime.now(tz=IST).strftime("%H:%M")
-    return day, hour_min
+from tools import get_now, index_of, room_of, is_time_between, get_data_from_file, get_computer_labs, compare, \
+    sort_list_by_time, list_to_string, items_from_data, isTimeFormat
 
 
-def index_of(item):
-    return context.index(item)
+class available_classes(object):
+    def __init__(self):
+        self.data = get_data_from_file()
+        self.classes = self.get_all_classes()
+        self.subjects = self.get_all_subjects()
+        self.teachers = self.get_all_teachers()
+        self.computer_labs = get_computer_labs()
 
 
-def room_of(i):
-    return i[index_of("building")], i[index_of("room number")]
+    def get_class_for_now(self):
+        now = get_now()
+        return self.get_classes_by_time(now[0], now[1])
 
 
-def get_data_from_file(file_path: str) -> str:
-    """
-    get file name of cvs file, and return the file as list of lists
+    def get_all_classes(self) -> list:
+        """
+        get all classes in jct from data list
 
-    :param file_path: path of file
-    :return: data as list of lists
-    """
-    with open(filepath, newline='\n', encoding='UTF-8') as csvfile:
-        data = list(csv.reader(csvfile))
-    data = list(filter(lambda i: i[index_of("building")] != "" and i[index_of("start time")] != "", data))
-    return data
+        :param data: list of lists with all data
+        :return: list of tuples like (building, room number)
+        """
+        return sorted(list(set(map(lambda i: (i[index_of("building")], i[index_of("room number")]), self.data))),
+                      key=lambda i: (i[0], i[1]))
+
+    def get_all_teachers(self) -> list:
+        """
+        get all lecturers in jct from data list
+
+        :type data: list of lists with all data
+        :rtype: list
+        :return: list of string with all lecturers
+        """
+        return sorted(list(set(map(lambda i: i[index_of("teacher")], self.data))))
+
+    def get_all_subjects(self):
+        """
+        get all courses in jct from data list
+
+        :type data: list of lists with all data
+        :rtype: list
+        :return: list of string with all courses
+        """
+        return sorted(list(set(map(lambda i: i[index_of("course name")], self.data))))
+
+    def get_by_teacher(self, name):
+        """
+        Gets all data by a lecturer, in one long string form
+
+        :param data: list of lists with the data
+        :param name: The lecturer he wants to get the data
+        :return: Long string with all data on the lecturer
+        """
+        lst = sort_list_by_time(filter(lambda i: compare(i[index_of("teacher")], name), self.data))
+        return list_to_string('🎓 ', items_from_data(lst, "course name", "📅 יום", "day",
+                                                     "start time", "end time", "🔹", "building", "room number", "type",
+                                                     "students number", "notes"))
+
+    def get_by_subject(self, subject):
+        """
+        Gets all data by a courses, in one long string form
+
+        :param subject: The courses he wants to get the data
+        :return: Long string with all data on the courses
+        """
+        lst = sort_list_by_time(filter(lambda i: i[index_of("course name")] == subject, self.data))
+        return list_to_string('🎓 ', items_from_data(lst, "teacher", "📅 יום", "day",
+                                                     "start time", "end time", "🔹", "building", "room number", "type",
+                                                     "students number", "notes"))
+
+    def get_by_room(self, building, room_number):
+        """
+        Gets all data by a building and room_number, in one long string form
+
+        :param building, room_number: The room he wants to get the data
+        :return: Long string with all data on the courses
+        """
+        lst = sort_list_by_time((filter(lambda i: room_of(i) == (building, room_number), self.data)))
+        return list_to_string('🏘 ', items_from_data(lst, "course name", "teacher", "📅 יום", "day",
+                                                     "start time", "end time", "🔹", "type",
+                                                     "students number", "notes"))
+
+    def rooms_to_string(self, rooms):
+        """
+        Gets a list of tuples - building, room, and when room is available, making it a readable string
+
+        :param rooms: list of tuples - building, room, and when room is available
+        :return: one long string
+        """
+        rooms = sorted(rooms, key=lambda i: (i[0], i[1]))
+        rooms = map(lambda i: (i[0], i[1] + " (🖥)", i[2]) if i[:2] in self.computer_labs else i, rooms)
+        return list_to_string("🆓 ", map(lambda i: i[0] + " " + i[1] + ", פנוי עד " + i[2], rooms))
 
 
-def is_time_between(begin_time, end_time, check_time=None):
-    check_time = check_time or datetime.utcnow().time()
-    if begin_time < end_time:
-        return check_time >= begin_time and check_time <= end_time
-    else:  # crosses midnight
-        return check_time >= begin_time or check_time <= end_time
+    def get_classes_by_time(self, day, time):
+        list_of_empty_rooms = []
+        result = []
+        for room in self.classes:
+            # get list for room with all lesson that now in the class
+            if not list(filter(lambda i: i[index_of("day")] == day and room_of(i) == room and is_time_between(
+                    i[index_of("start time")], i[index_of("end time")], time), self.data)):
+                #if list is empty -> add room to list
+                list_of_empty_rooms.append(room)
 
+        # pass all room that found like a empty and add the soon lesson
+        for room in list_of_empty_rooms:
+            lesson_today_in_room = list(
+                filter(lambda i: room_of(i) == room and i[index_of("day")] == day and i[index_of("start time")] > time,
+                       self.data))
+            if len(lesson_today_in_room) == 0:
+                # if no lesson today after time
+                soon_time = "סוף היום 💪"
+            else:
+                # if exist lessons today -> add first one
+                sorted_list = sorted(lesson_today_in_room, key=lambda i: i[index_of("start time")])
+                soon_time = sorted_list[0][index_of("start time")]
+            result.append(room + (soon_time,))
+        return self.rooms_to_string(result)
 
-def get_class_for_now(data, all_classes):
-    now = get_now()
-    return get_classes_by_time(data, all_classes, now[0], now[1])
+    def answer_to_message(self, message):
+        if message == COMMAND_EMPTY_ROOM_NOW:
+            result = " חדרים פנויים לעכשיו  😎:\n\n"
+            result += self.get_class_for_now()
+        elif message == COMMAND_BY_HOUR:
+            result = RESULT_FOR_BY_HOUR
+        elif message == COMMAND_BY_ROOM:
+            result = RESULT_BY_ROOM
+        elif message == COMMAND_BY_SUBJECT:
+            result = RESULT_BY_SUBJECT
+        elif message == COMMAND_BY_TEACHER:
+            result = RESULT_BY_TEACHER
+        elif message == COMMAND_RETURN:
+            result = RESULT_RETURN
+        elif message == COMMAND_ABOUT:
+            result = RESULT_ABOUT
+        elif message.split(" ")[0] in "אבגדהו" and isTimeFormat(message.split(" ")[1]):
+            result = "מציג חדרים פנויים עבור יום " + message + " 😎:\n\n"
+            result += self.get_classes_by_time(message.split(" ")[0], message.split(" ")[1])
+        elif len(list(filter(lambda i: compare(i, message), self.teachers))) == 1:
+            result = "מציג את כל המידע על המרצה " + message + "\n\n"
+            result += self.get_by_teacher(message)
+        elif message in self.subjects:
+            result = "מציג את כל המידע על הקורס  " + message + "\n\n"
+            result += self.get_by_subject(message)
 
-
-def get_classes_by_time(data, all_classes, day, time):
-    list_of_empty_rooms = []
-    result = []
-    for room in all_classes:
-        if list(filter(lambda i: i[index_of("day")] == day and room_of(i) == room
-                                 and is_time_between(i[index_of("start time")], i[index_of("end time")], time),
-                       data)) == []:
-            list_of_empty_rooms.append(room)
-    for room in list_of_empty_rooms:
-        lesson_today_in_room = list(
-            filter(lambda i: room_of(i) == room and i[index_of("day")] == day and i[index_of("start time")] > time,
-                   data))
-        if len(lesson_today_in_room) == 0:
-            soon_time = "סוף היום 💪"
+        elif len(message.split(" ")) == 2 and (message.split(" ")[0], message.split(" ")[1]) in self.classes:
+            result = "מציג את כל המידע על הכיתה " + message + "\n\n"
+            result += self.get_by_room(message.split(" ")[0], message.split(" ")[1])
         else:
-            sorted_list = sorted(lesson_today_in_room, key=lambda i: i[index_of("start time")])
-            soon_time = sorted_list[0][index_of("start time")]
-        result.append(room + (soon_time,))
-    return result
-
-
-def day_and_hour(i):
-    return i[index_of("day")], i[index_of("start time")]
-
-
-def sort_list_by_time(data, day=None, hour_min=None):
-    if day == None or hour_min == None:
-        (day, hour_min) = get_now()
-    # list1 = sorted(filter(
-    #    lambda i: day > i[index_of("day")] or day == i[index_of("day")] and hour_min >= i[index_of("start time")],
-    #    data), key=day_and_hour)
-    # list2 = sorted(filter(lambda i: i not in list2, data), key=day_and_hour)
-    # return list1 + list2
-    return sorted(data, key=day_and_hour)
+            result = False
+        return result
