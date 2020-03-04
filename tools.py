@@ -3,9 +3,9 @@ import csv
 import time
 import re
 from datetime import datetime, time
-from time import strftime, gmtime
+from time import strftime, gmtime, strptime
 
-from config import COMPUTER_LABS_FILE, FILEPATH_OF_DATA, context
+from config import COMPUTER_LABS_FILE, FILEPATH_OF_DATA, context, HEB_LETTERS
 
 
 def get_now() -> tuple:
@@ -23,7 +23,7 @@ def get_now() -> tuple:
 
 def isTimeFormat(input):
     try:
-        time.strptime(input, '%H:%M')
+        strptime(input, '%H:%M')
         return True
     except ValueError:
         return False
@@ -113,8 +113,10 @@ def get_data_from_file(file_path: str = FILEPATH_OF_DATA) -> list:
     return list(filter(lambda i: i[index_of("building")] != "" and i[index_of("start time")] != "", data))
 
 
-def get_computer_labs(file_path = COMPUTER_LABS_FILE):
-        f = open(file_path, "r", encoding='UTF-8')
-        return list(
-            map(lambda i: (i.split(" ")[0], i.split(" ")[1]), map(lambda i: i.replace("\n", ""), f.readlines())))
+def get_computer_labs(file_path=COMPUTER_LABS_FILE):
+    f = open(file_path, "r", encoding='UTF-8')
+    return list(
+        map(lambda i: (i.split(" ")[0], i.split(" ")[1]), map(lambda i: i.replace("\n", ""), f.readlines())))
+
+
 

@@ -3,6 +3,9 @@ import requests
 from config import *
 headers = {'user-agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/67.0.3396.99 Safari/537.36'}
 TryLogin = 'https://levnet.jct.ac.il/api/home/login.ashx?action=TryLogin'
+CAMPUS = 1
+SEMESTER = 3
+
 def get_info_from_string(time_and_place):
     STRING_TO_START = "כל השבועות - יום "
     if time_and_place == "":
@@ -19,6 +22,7 @@ def get_info_from_string(time_and_place):
             try:
                 build = build_and_room.split(' ')[0]
                 room = build_and_room.split(' ')[1]
+                print(build + " " + room)
             except:
                 build = build_and_room
                 room = ""
@@ -29,7 +33,7 @@ def get_info_from_string(time_and_place):
 def getStat(username, password):
     login_data = {'username':username,"password":password}
     with requests.Session() as s:
-        file = open(filepath, "w")
+        file = open("courses.csv", "w")
         #file.write(",".join(context) + "\n")
         url = TryLogin
         url2 = "https://levnet.jct.ac.il/api/common/actualCourses.ashx?action=LoadActualCourses"
@@ -38,13 +42,13 @@ def getStat(username, password):
         #r = s.get(url, headers=headers, verify = False)
         r = s.post(url, data=login_data, headers=headers, verify = False)
         #r = s.get(url2, headers=headers, verify = False)
-        r = s.post(url2, data={"selectedAcademicYear":5780,"selectedSemester":2,"selectedExtension":1}, headers=headers, verify = False)
+        r = s.post(url2, data={"selectedAcademicYear":5780,"selectedSemester":SEMESTER,"selectedExtension":CAMPUS}, headers=headers, verify = False)
         total_pages = json.loads(r.content)["totalPages"]
         print(total_pages)
         for k in range(1, total_pages + 1):
             #r = s.get(url2, headers=headers)
             print(k)
-            r = s.post(url2, data={"selectedAcademicYear":5780,"selectedSemester":2,"selectedExtension":1,"selectedCategory":None,"freeSearch":None,"current":k}, headers=headers)
+            r = s.post(url2, data={"selectedAcademicYear":5780,"selectedSemester":SEMESTER,"selectedExtension":CAMPUS,"selectedCategory":None,"freeSearch":None,"current":k}, headers=headers)
             items = json.loads(r.content)["items"]
             
             for i in items:
@@ -61,8 +65,11 @@ def getStat(username, password):
                             arr = [i["id"],i["courseName"],j["groupFullNumber"],j["courseGroupLecturers"]
                                              ,day, start_time, end_time, build, room,str(j["groupTypeName"]),str(j["courseRelativeQuota"]),str(j["groupComment"])]
                             arr = list(map(lambda x: str(x).replace('\r', '').replace('\n', '').replace(",",";"), arr))
-                            file.write(",".join(arr) + "\n")
+                            print(arr)
+                            if(time_and_place != ""):
+                                file.write(",".join(arr) + "\n")
         file.close()
+
 def main():
     password = input("Enter password>\n")
     getStat("egoldshm", password)

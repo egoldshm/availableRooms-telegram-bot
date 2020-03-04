@@ -15,11 +15,9 @@ class available_classes(object):
         self.teachers = self.get_all_teachers()
         self.computer_labs = get_computer_labs()
 
-
-    def get_class_for_now(self):
+    def get_class_for_now(self, only_computers_room):
         now = get_now()
-        return self.get_classes_by_time(now[0], now[1])
-
+        return self.get_classes_by_time(now[0], now[1], only_computers_room)
 
     def get_all_classes(self) -> list:
         """
@@ -88,6 +86,9 @@ class available_classes(object):
                                                      "start time", "end time", "🔹", "type",
                                                      "students number", "notes"))
 
+    def get_only_computers_rooms(self, rooms):
+        return list(filter(lambda i: i[:2] in self.computer_labs, rooms))
+
     def rooms_to_string(self, rooms):
         """
         Gets a list of tuples - building, room, and when room is available, making it a readable string
@@ -99,15 +100,14 @@ class available_classes(object):
         rooms = map(lambda i: (i[0], i[1] + " (🖥)", i[2]) if i[:2] in self.computer_labs else i, rooms)
         return list_to_string("🆓 ", map(lambda i: i[0] + " " + i[1] + ", פנוי עד " + i[2], rooms))
 
-
-    def get_classes_by_time(self, day, time):
+    def get_classes_by_time(self, day, time, only_computers_room):
         list_of_empty_rooms = []
         result = []
         for room in self.classes:
             # get list for room with all lesson that now in the class
             if not list(filter(lambda i: i[index_of("day")] == day and room_of(i) == room and is_time_between(
                     i[index_of("start time")], i[index_of("end time")], time), self.data)):
-                #if list is empty -> add room to list
+                # if list is empty -> add room to list
                 list_of_empty_rooms.append(room)
 
         # pass all room that found like a empty and add the soon lesson
@@ -123,12 +123,18 @@ class available_classes(object):
                 sorted_list = sorted(lesson_today_in_room, key=lambda i: i[index_of("start time")])
                 soon_time = sorted_list[0][index_of("start time")]
             result.append(room + (soon_time,))
+        if only_computers_room:
+            result = self.get_only_computers_rooms(result)
         return self.rooms_to_string(result)
 
-    def answer_to_message(self, message):
+    def answer_to_message(self, message, only_computers_room):
         if message == COMMAND_EMPTY_ROOM_NOW:
             result = " חדרים פנויים לעכשיו  😎:\n\n"
-            result += self.get_class_for_now()
+            result += self.get_class_for_now(only_computers_room)
+        elif message == COMMAND_SHOW_ALL:
+            result = RESULT_SHOW_ALL
+        elif message in HEB_LETTERS:
+            result = RESULT_BY_LETTER
         elif message == COMMAND_BY_HOUR:
             result = RESULT_FOR_BY_HOUR
         elif message == COMMAND_BY_ROOM:
@@ -141,15 +147,27 @@ class available_classes(object):
             result = RESULT_RETURN
         elif message == COMMAND_ABOUT:
             result = RESULT_ABOUT
-        elif message.split(" ")[0] in "אבגדהו" and isTimeFormat(message.split(" ")[1]):
+        elif message == COMMAND_ALL_ROOMS:
+            result = RESULT_ALL_ROOMS
+        elif message == COMMAND_ONLY_COMPUTERS:
+            result = RESULT_ONLY_COMPUTERS
+        elif message == COMMAND_AGUDA:
+            result = RESULT_AGUDA
+        elif isTimeFormat(message):
+            day = get_now()[0]
+            result = result = "מציג חדרים פנויים עבור יום " + day + " " + message + " 😎:\n\n"
+            result += self.get_classes_by_time(day, message, only_computers_room)
+        elif message.split(" ")[0] in "אבגדהוז" and len(message.split(" ")) == 2 and isTimeFormat(message.split(" ")[1]):
             result = "מציג חדרים פנויים עבור יום " + message + " 😎:\n\n"
-            result += self.get_classes_by_time(message.split(" ")[0], message.split(" ")[1])
+            result += self.get_classes_by_time(message.split(" ")[0], message.split(" ")[1], only_computers_room)
         elif len(list(filter(lambda i: compare(i, message), self.teachers))) == 1:
             result = "מציג את כל המידע על המרצה " + message + "\n\n"
             result += self.get_by_teacher(message)
         elif message in self.subjects:
             result = "מציג את כל המידע על הקורס  " + message + "\n\n"
             result += self.get_by_subject(message)
+        elif message in [i[0] for i in self.classes]:
+            result = RESULT_BY_ROOM1
 
         elif len(message.split(" ")) == 2 and (message.split(" ")[0], message.split(" ")[1]) in self.classes:
             result = "מציג את כל המידע על הכיתה " + message + "\n\n"
