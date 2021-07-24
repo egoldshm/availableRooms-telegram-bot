@@ -3,7 +3,7 @@ import pytz
 IST = pytz.timezone('Etc/GMT-2')
 COMPUTER_LABS_FILE = "computer_labs"
 FILEPATH_OF_DATA = "courses.csv"
-filepathTal = "coursesTal.csv"
+
 STATISTICS_COURSES_FILE = ""
 
 REPORT_FILE = "דיווח.csv"
