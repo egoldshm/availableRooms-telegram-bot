@@ -10,7 +10,7 @@ REPORT_FILE = "דיווח.csv"
 context = ["id", "course name", "course code", "teacher", "day",
            "start time", "end time", "building", "room number", "type", "students number", "notes"]
 API_CODE_OF_BOT = '1028809311:AAGr-JzIAGItdtpeX6WUAPquGdzlMmIyENE'
-URL = ""
+URL = "https://emptyclassrooms.herokuapp.com/"
 ADMIN_ID = 114534171
 
 # Constants - for messages:
