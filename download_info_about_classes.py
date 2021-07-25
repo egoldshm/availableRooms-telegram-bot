@@ -2,13 +2,14 @@ import json
 import requests
 from config import *
 
+FILE_NAME = FILENAME_ALL_DATA
 headers = {
     'user-agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/67.0.3396.99 Safari/537.36'}
 TryLogin = 'https://levnet.jct.ac.il/api/home/login.ashx?action=TryLogin'
 CAMPUS = 1
 YEAR = 5782
 SEMESTER = 2
-FILE_NAME = "courses.csv"
+USERNAME = "egoldshm"
 
 
 def get_info_from_string(time_and_place):
@@ -35,7 +36,7 @@ def get_info_from_string(time_and_place):
         return result
 
 
-def getStat(username, password):
+def reload_file(username, password, year, semester, campus):
     login_data = {'username': username, "password": password}
     with requests.Session() as s:
         file = open(FILE_NAME, "w")
@@ -45,15 +46,13 @@ def getStat(username, password):
         url4 = "https://levnet.jct.ac.il/api/common/actualCourses.ashx?action=LoadActualCourse&ActualCourseID="
         r = s.post(url, data=login_data, headers=headers, verify=False)
 
-        r = s.post(url2, data={"selectedAcademicYear": YEAR, "selectedSemester": SEMESTER, "selectedExtension": CAMPUS},
+        r = s.post(url2, data={"selectedAcademicYear": year, "selectedSemester": semester, "selectedExtension": campus},
                    headers=headers, verify=False)
         total_pages = json.loads(r.content)["totalPages"]
-        print(total_pages)
         for k in range(1, total_pages + 1):
             # r = s.get(url2, headers=headers)
-            print(k)
             r = s.post(url2,
-                       data={"selectedAcademicYear": YEAR, "selectedSemester": SEMESTER, "selectedExtension": CAMPUS,
+                       data={"selectedAcademicYear": year, "selectedSemester": semester, "selectedExtension": campus,
                              "selectedCategory": None, "freeSearch": None, "current": k}, headers=headers)
             items = json.loads(r.content)["items"]
 
@@ -71,7 +70,7 @@ def getStat(username, password):
                             arr = [i["id"], i["courseName"], j["groupFullNumber"], j["courseGroupLecturers"]
                                 , day, start_time, end_time, build, room, str(j["groupTypeName"]),
                                    str(j["courseRelativeQuota"]), str(j["groupComment"])]
-                            arr = list(map(lambda x: str(x).replace('\r', '').replace('\n', '').replace(",", ";"), arr))
+                            arr = [str(x).replace('\r', '').replace('\n', '').replace(",", ";") for x in arr]
                             print(arr)
                             if time_and_place != "":
                                 file.write(",".join(arr) + "\n")
@@ -80,8 +79,29 @@ def getStat(username, password):
 
 def main():
     password = input("Enter password>\n")
-    getStat("egoldshm", password)
+    reload_file("egoldshm", password, year=YEAR, semester=SEMESTER, campus=CAMPUS)
 
 
 if __name__ == "__main__":
     main()
+
+
+def admin_update_file(message):
+    _, password, year, semester, campus = message.split(" ")
+    is_valid = True
+    if year.isdigit():
+        year = int(year)
+    else:
+        is_valid = False
+    if semester.isdigit():
+        semester = int(semester)
+    else:
+        is_valid = False
+    if campus.isdigit():
+        campus = int(campus)
+    else:
+        is_valid = False
+    if not is_valid:
+        return "הנתונים לא תקינים לעדכון"
+    reload_file(USERNAME, password, year, semester, campus)
+    return "מבוצע כרגע עדכון קובץ"

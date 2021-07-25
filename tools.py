@@ -5,7 +5,7 @@ import re
 from datetime import datetime, time
 from time import strftime, gmtime, strptime
 
-from config import COMPUTER_LABS_FILE, FILEPATH_OF_DATA, context, HEB_LETTERS
+from config import COMPUTER_LABS_FILE, FILENAME_ALL_DATA, context, HEB_LETTERS
 
 
 def get_now() -> tuple:
@@ -100,7 +100,7 @@ def sort_list_by_time(data, day=None, hour_min=None):
     return sorted(data, key=day_and_hour)
 
 
-def get_data_from_file(file_path: str = FILEPATH_OF_DATA) -> list:
+def get_data_from_file(file_path: str = FILENAME_ALL_DATA) -> list:
     """
     get file name of cvs file, and return the file as list of lists
 
