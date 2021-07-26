@@ -39,7 +39,7 @@ def get_info_from_string(time_and_place):
 def reload_file(username, password, year, semester, campus):
     login_data = {'username': username, "password": password}
     with requests.Session() as s:
-        file = open(FILE_NAME, "w")
+        file = open(FILE_NAME, "w", encoding="utf-8")
         # file.write(",".join(context) + "\n")
         url = TryLogin
         url2 = "https://levnet.jct.ac.il/api/common/actualCourses.ashx?action=LoadActualCourses"
@@ -70,7 +70,8 @@ def reload_file(username, password, year, semester, campus):
                             arr = [i["id"], i["courseName"], j["groupFullNumber"], j["courseGroupLecturers"]
                                 , day, start_time, end_time, build, room, str(j["groupTypeName"]),
                                    str(j["courseRelativeQuota"]), str(j["groupComment"])]
-                            arr = [str(x).replace('\r', '').replace('\n', '').replace(",", ";") for x in arr]
+                            arr = [str(x).replace('\r', '').replace('\n', '').replace(",", ";").replace('"', "") for x
+                                   in arr]
                             print(arr)
                             if time_and_place != "":
                                 file.write(",".join(arr) + "\n")
@@ -80,10 +81,6 @@ def reload_file(username, password, year, semester, campus):
 def main():
     password = input("Enter password>\n")
     reload_file("egoldshm", password, year=YEAR, semester=SEMESTER, campus=CAMPUS)
-
-
-if __name__ == "__main__":
-    main()
 
 
 def admin_update_file(message):
@@ -104,4 +101,8 @@ def admin_update_file(message):
     if not is_valid:
         return "הנתונים לא תקינים לעדכון"
     reload_file(USERNAME, password, year, semester, campus)
-    return "מבוצע כרגע עדכון קובץ"
+    return "בוצע עדכון נתונים"
+
+
+if __name__ == "__main__":
+    admin_update_file("עדכן  5779 2 1")

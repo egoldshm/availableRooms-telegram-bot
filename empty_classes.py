@@ -181,3 +181,8 @@ class available_classes(object):
         else:
             result = False
         return result
+
+
+if __name__ == "__main__":
+    x = available_classes()
+    print(x.get_all_classes())

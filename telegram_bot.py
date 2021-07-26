@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import os
+from typing import Dict
 
 from download_info_about_classes import admin_update_file
 from empty_classes import *
@@ -8,8 +9,15 @@ from telegram.ext import Updater, MessageHandler, Filters
 from telegram import KeyboardButton, ReplyKeyboardMarkup
 
 import report_file
+user_info: Dict[str, str]
+users_want_only_labs: Dict[str, str]
+users_select: Dict[str, str]
 
 PORT = int(os.environ.get('PORT', 8443))
+d = available_classes()
+users_info = {}
+users_want_only_labs = {}
+users_select = {}
 
 
 def list_of_lists_to_keyboards(buttons: List[List[str]]) -> ReplyKeyboardMarkup:
@@ -148,6 +156,7 @@ def answer(message, user):
         result = ("ToAdmin", result)
     elif user == ADMIN_ID and len(message.split(" ")) == 5 and message.split(" ")[0] == "עדכן":
         result = admin_update_file(message)
+        d.__init__()
     else:
         users_info[user] = ""
         result = "פקודה לא נמצאה, נסה שנית 😞"
@@ -159,10 +168,6 @@ def answer(message, user):
     return result
 
 
-d = available_classes()
-users_info = {}
-users_want_only_labs = {}
-users_select = {}
 
 
 def main():
