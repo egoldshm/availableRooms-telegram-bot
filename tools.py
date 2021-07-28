@@ -6,7 +6,7 @@ from datetime import datetime, time
 from time import strftime, gmtime, strptime
 from typing import Tuple, List
 
-from config import COMPUTER_LABS_FILE, FILENAME_ALL_DATA, context, HEB_LETTERS
+from config import COMPUTER_LABS_FILE, FILENAME_ALL_DATA, LIST_CONTEXT, HEB_LETTERS
 
 
 def get_now() -> Tuple[str, str]:
@@ -45,7 +45,7 @@ def items_from_data(lst, *info) -> object:
     :param info: list Which contains descriptions of columns in DATA and also just strings to display in the result
     :return: list of strings
     """
-    return list(map(lambda i: " ".join([(i[index_of(item)] if item in context else item) for item in info]), lst))
+    return list(map(lambda i: " ".join([(i[index_of(item)] if item in LIST_CONTEXT else item) for item in info]), lst))
 
 
 def list_to_string(string, lst):
@@ -62,14 +62,14 @@ def list_to_string(string, lst):
 
 
 def index_of(item):
-    from config import context
-    return context.index(item)
+    from config import LIST_CONTEXT
+    return LIST_CONTEXT.index(item)
 
 
 def is_time_between(begin_time, end_time, check_time=None):
     check_time = check_time or datetime.utcnow().time()
     if begin_time < end_time:
-        return check_time >= begin_time and check_time <= end_time
+        return begin_time <= check_time <= end_time
     else:  # crosses midnight
         return check_time >= begin_time or check_time <= end_time
 
