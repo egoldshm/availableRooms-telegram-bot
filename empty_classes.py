@@ -3,12 +3,12 @@
 from typing import List, Any, Tuple
 from config import *
 from tools import get_now, index_of, room_of, is_time_between, get_data_from_file, get_computer_labs, compare, \
-    sort_list_by_time, list_to_string, items_from_data, isTimeFormat
+    sort_list_by_time, list_to_string, items_from_data, is_time_format
 
 
-class available_classes(object):
+class AvailableClasses:
     data: List
-    classes: List[str]
+    classes: List[Tuple[str, str]]
     subjects: List[str]
     teachers: List[str]
     computer_labs: List[Tuple[str, str]]
@@ -20,11 +20,11 @@ class available_classes(object):
         self.teachers = self.get_all_teachers()
         self.computer_labs = get_computer_labs()
 
-    def get_class_for_now(self, only_computers_room):
+    def get_class_for_now(self, only_computers_room: bool) -> str:
         now = get_now()
         return self.get_classes_by_time(now[0], now[1], only_computers_room)
 
-    def get_all_classes(self) -> list:
+    def get_all_classes(self) -> List[Tuple[str, str]]:
         """
         get all classes in jct from data list
 
@@ -34,17 +34,16 @@ class available_classes(object):
         return sorted(list(set(map(lambda i: (i[index_of("building")], i[index_of("room number")]), self.data))),
                       key=lambda i: (i[0], i[1]))
 
-    def get_all_teachers(self) -> list:
+    def get_all_teachers(self) -> List[str]:
         """
         get all lecturers in jct from data list
 
         :type data: list of lists with all data
-        :rtype: list
         :return: list of string with all lecturers
         """
         return sorted(list(set(map(lambda i: i[index_of("teacher")], self.data))))
 
-    def get_all_subjects(self):
+    def get_all_subjects(self) -> List[str]:
         """
         get all courses in jct from data list
 
@@ -54,7 +53,7 @@ class available_classes(object):
         """
         return sorted(list(set(map(lambda i: i[index_of("course name")], self.data))))
 
-    def get_by_teacher(self, name):
+    def get_by_teacher(self, name: str) -> str:
         """
         Gets all data by a lecturer, in one long string form
 
@@ -67,7 +66,7 @@ class available_classes(object):
                                                      "start time", "end time", "🔹", "building", "room number", "type",
                                                      "students number", "notes"))
 
-    def get_by_subject(self, subject):
+    def get_by_subject(self, subject:str) -> str:
         """
         Gets all data by a courses, in one long string form
 
@@ -79,11 +78,12 @@ class available_classes(object):
                                                      "start time", "end time", "🔹", "building", "room number", "type",
                                                      "students number", "notes"))
 
-    def get_by_room(self, building, room_number):
+    def get_by_room(self, building: str, room_number: str) -> str:
         """
         Gets all data by a building and room_number, in one long string form
 
-        :param building, room_number: The room he wants to get the data
+        :param building:
+        :param room_number: The room he wants to get the data
         :return: Long string with all data on the courses
         """
         lst = sort_list_by_time((filter(lambda i: room_of(i) == (building, room_number), self.data)))
@@ -91,21 +91,23 @@ class available_classes(object):
                                                      "start time", "end time", "🔹", "type",
                                                      "students number", "notes"))
 
-    def get_only_computers_rooms(self, rooms):
+    def get_only_computers_rooms(self, rooms: List[Tuple[str, str, str]]) -> List[Tuple[str, str, str]]:
         return [i for i in rooms if i[:2] in self.computer_labs]
 
-    def rooms_to_string(self, rooms):
+    def rooms_to_string(self, rooms_and_times: List[Tuple[str, str, str]]) -> str:
         """
         Gets a list of tuples - building, room, and when room is available, making it a readable string
 
-        :param rooms: list of tuples - building, room, and when room is available
+        :param rooms_and_times: list of tuples - building, room, and when room is available
         :return: one long string
         """
-        rooms = sorted(rooms, key=lambda i: (i[0], i[1]))
+        rooms = sorted(rooms_and_times, key=lambda i: (i[0], i[1]))
         rooms = map(lambda i: (i[0], i[1] + " (🖥)", i[2]) if i[:2] in self.computer_labs else i, rooms)
         return list_to_string("🆓 ", map(lambda i: i[0] + " " + i[1] + ", פנוי עד " + i[2], rooms))
 
-    def get_classes_by_time(self, day, time, only_computers_room):
+    def get_classes_by_time(self, day: str, time: str, only_computers_room: bool) -> str:
+        list_of_empty_rooms: List[Tuple[str, str]]
+        result: List[Tuple[str, str, str]]
         list_of_empty_rooms = []
         result = []
         for room in self.classes:
@@ -132,7 +134,7 @@ class available_classes(object):
             result = self.get_only_computers_rooms(result)
         return self.rooms_to_string(result)
 
-    def answer_to_message(self, message, only_computers_room):
+    def answer_to_message(self, message: str, only_computers_room: bool) -> str:
         if message == COMMAND_EMPTY_ROOM_NOW:
             result = " חדרים פנויים לעכשיו  😎:\n\n"
             result += self.get_class_for_now(only_computers_room)
@@ -158,11 +160,11 @@ class available_classes(object):
             result = RESULT_ONLY_COMPUTERS
         elif message == COMMAND_AGUDA:
             result = RESULT_AGUDA
-        elif isTimeFormat(message):
+        elif is_time_format(message):
             day = get_now()[0]
             result = result = "מציג חדרים פנויים עבור יום " + day + " " + message + " 😎:\n\n"
             result += self.get_classes_by_time(day, message, only_computers_room)
-        elif message.split(" ")[0] in "אבגדהוז" and len(message.split(" ")) == 2 and isTimeFormat(
+        elif message.split(" ")[0] in "אבגדהוז" and len(message.split(" ")) == 2 and is_time_format(
                 message.split(" ")[1]):
             result = "מציג חדרים פנויים עבור יום " + message + " 😎:\n\n"
             result += self.get_classes_by_time(message.split(" ")[0], message.split(" ")[1], only_computers_room)
@@ -184,5 +186,5 @@ class available_classes(object):
 
 
 if __name__ == "__main__":
-    x = available_classes()
+    x = AvailableClasses()
     print(x.get_all_classes())

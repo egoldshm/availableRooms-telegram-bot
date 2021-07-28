@@ -9,12 +9,13 @@ from telegram.ext import Updater, MessageHandler, Filters
 from telegram import KeyboardButton, ReplyKeyboardMarkup
 
 import report_file
+
 user_info: Dict[str, str]
 users_want_only_labs: Dict[str, str]
 users_select: Dict[str, str]
 
 PORT = int(os.environ.get('PORT', 8443))
-d = available_classes()
+d = AvailableClasses()
 users_info = {}
 users_want_only_labs = {}
 users_select = {}
@@ -34,7 +35,7 @@ def start(update, context):
     """
     An event-triggered function when a user activates the bot
     """
-    keyboard = get_keyboard("", update.message.from_user.id)
+    keyboard = list_of_lists_to_keyboards(get_keyboard("", update.message.from_user.id))
     context.bot.send_message(chat_id=update.effective_chat.id, text=WELCOME_MESSAGE, reply_markup=keyboard)
     report_file.report_to_file(context, update.message.date, update.message.from_user.id,
                                update.message.from_user.first_name,
@@ -70,7 +71,7 @@ def answer_in_bot(update, context):
     if check:
         result = check
 
-    keyboard = get_keyboard(message, update.message.from_user.id)
+    keyboard = list_of_lists_to_keyboards(get_keyboard(message, update.message.from_user.id))
     context.bot.send_message(chat_id=update.effective_chat.id, text=result, reply_markup=keyboard)
     report_file.report_to_file(context, update.message.date, update.message.from_user.id,
                                update.message.from_user.first_name,
@@ -93,7 +94,7 @@ def get_heb_letters_by_list(lst, letters_in_line=5):
     return add_return_buttons(result)
 
 
-def get_keyboard(message, user_id):
+def get_keyboard(message: str, user_id) -> List[List[str]]:
     """
     A function that returns the keyboard for a user's message
     """
@@ -137,10 +138,10 @@ def get_keyboard(message, user_id):
                       COMMAND_ONLY_COMPUTERS if not user_id in users_want_only_labs else COMMAND_ALL_ROOMS],
                   [COMMAND_AGUDA],
                   [COMMAND_ABOUT]]
-    return list_of_lists_to_keyboards(result)
+    return result
 
 
-def answer(message, user):
+def answer(message: str, user) -> str:
     """
     Reply to the bot according to the message
     """
@@ -166,8 +167,6 @@ def answer(message, user):
         del users_want_only_labs[user]
 
     return result
-
-
 
 
 def main():

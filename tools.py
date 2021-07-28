@@ -4,11 +4,12 @@ import time
 import re
 from datetime import datetime, time
 from time import strftime, gmtime, strptime
+from typing import Tuple, List
 
 from config import COMPUTER_LABS_FILE, FILENAME_ALL_DATA, context, HEB_LETTERS
 
 
-def get_now() -> tuple:
+def get_now() -> Tuple[str, str]:
     """
     get current time
 
@@ -21,9 +22,9 @@ def get_now() -> tuple:
     return day, hour_min
 
 
-def isTimeFormat(input):
+def is_time_format(text_input: str) -> bool:
     try:
-        strptime(input, '%H:%M')
+        strptime(text_input, '%H:%M')
         return True
     except ValueError:
         return False
@@ -73,11 +74,11 @@ def is_time_between(begin_time, end_time, check_time=None):
         return check_time >= begin_time or check_time <= end_time
 
 
-def room_of(i):
+def room_of(i: List[str]) -> Tuple[str, str]:
     return i[index_of("building")], i[index_of("room number")]
 
 
-def day_and_hour(i):
+def day_and_hour(i: List[str]) -> Tuple[str, str]:
     return i[index_of("day")], i[index_of("start time")]
 
 
@@ -100,7 +101,7 @@ def sort_list_by_time(data, day=None, hour_min=None):
     return sorted(data, key=day_and_hour)
 
 
-def get_data_from_file(file_path: str = FILENAME_ALL_DATA) -> list:
+def get_data_from_file(file_path: str = FILENAME_ALL_DATA) -> List[str]:
     """
     get file name of cvs file, and return the file as list of lists
 
@@ -110,10 +111,10 @@ def get_data_from_file(file_path: str = FILENAME_ALL_DATA) -> list:
     with open(file_path, newline='\n', encoding='UTF-8') as csvfile:
         data = list(csv.reader(csvfile))
     # take only what have building and start time
-    return list(filter(lambda i: i[index_of("building")] != "" and i[index_of("start time")] != "", data))
+    return [i for i in data if i[index_of("building")] != "" and i[index_of("start time")] != ""]
 
 
-def get_computer_labs(file_path=COMPUTER_LABS_FILE):
+def get_computer_labs(file_path: str = COMPUTER_LABS_FILE) -> List[Tuple[str, str]]:
     f = open(file_path, "r", encoding='UTF-8')
     return list(
         map(lambda i: (i.split(" ")[0], i.split(" ")[1]), map(lambda i: i.replace("\n", ""), f.readlines())))
