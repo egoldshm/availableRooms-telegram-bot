@@ -2,7 +2,7 @@ telegram
 urllib3
 python-telegram-bot==13.6
 flask
-requests==2.25.1
+requests==2.31.0
 beautifulsoup4
 lxml
 emoji
